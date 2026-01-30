@@ -1,48 +1,60 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Fast Chat</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .chat-bg { background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); }
+        .chat-bg { background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); background-size: 400px; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        body { touch-action: manipulation; }
     </style>
 </head>
-<body class="h-screen flex flex-col font-sans bg-[#dadbd3]">
+<body class="h-[100dvh] flex flex-col font-sans bg-[#dadbd3] overflow-hidden">
 
     <script>
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwmRhZSOsvOxRSyAKAJrzNDjRJ5BAijnLTKStV_r4RnahebHPaAJjJ664kZZ9pWuwYB/exec";
     </script>
 
     <div id="login-screen" class="fixed inset-0 bg-[#075e54] z-50 flex items-center justify-center p-6 hidden">
-        <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-sm text-center">
-            <h2 class="text-2xl font-bold mb-4 text-[#075e54]">Netlify Chat Login</h2>
-            <input type="text" id="userNameInput" placeholder="Enter Your Name" class="w-full p-3 border rounded-lg mb-4 outline-none">
-            <button id="loginBtn" onclick="saveLogin()" class="w-full bg-[#00a884] text-white p-3 rounded-lg font-bold">Start</button>
+        <div class="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-sm text-center">
+            <h2 class="text-xl font-bold mb-4 text-[#075e54]">Login to Chat</h2>
+            <input type="text" id="userNameInput" placeholder="Your Name" class="w-full p-3 border rounded-xl mb-4 outline-none focus:ring-2 focus:ring-[#00a884]">
+            <button id="loginBtn" onclick="saveLogin()" class="w-full bg-[#00a884] text-white p-3 rounded-xl font-bold active:scale-95 transition">Start Chatting</button>
         </div>
     </div>
 
     <div id="chat-ui" class="flex flex-col h-full">
-        <div class="bg-[#075e54] text-white p-4 flex justify-between items-center shadow-md">
+        <div class="bg-[#075e54] text-white p-3 flex justify-between items-center shadow-md shrink-0">
             <div class="flex items-center">
-                <div class="w-10 h-10 bg-gray-300 rounded-full mr-3 overflow-hidden">
-                    <img id="header-avatar" src="https://ui-avatars.com/api/?name=User">
+                <div class="w-10 h-10 bg-gray-200 rounded-full mr-3 overflow-hidden border-2 border-white/20">
+                    <img id="header-avatar" src="https://ui-avatars.com/api/?name=User&background=random">
                 </div>
-                <div><h1 id="display-name" class="font-bold text-sm">Chat App</h1></div>
+                <div>
+                    <h1 id="display-name" class="font-bold text-sm">Chat</h1>
+                    <p class="text-[10px] text-green-300">online</p>
+                </div>
             </div>
-            <button onclick="logout()" class="text-xs bg-[#054d44] px-2 py-1 rounded">Logout</button>
+            <button onclick="logout()" class="text-[10px] bg-black/20 px-3 py-1.5 rounded-full uppercase tracking-wider font-bold">Logout</button>
         </div>
-        <div id="chat-box" class="flex-1 overflow-y-auto p-4 chat-bg flex flex-col gap-2"></div>
-        <div class="bg-[#f0f0f0] p-3 flex items-center gap-2">
-            <input type="text" id="userMsg" placeholder="Type a message" class="flex-1 p-2 px-4 rounded-full outline-none">
-            <button onclick="send()" class="bg-[#00a884] text-white p-3 rounded-full shadow-md">➤</button>
+
+        <div id="chat-box" class="flex-1 overflow-y-auto p-4 chat-bg flex flex-col gap-2 hide-scrollbar scroll-smooth"></div>
+
+        <div class="bg-[#f0f0f0] p-3 flex items-center gap-2 pb-5 sm:pb-3">
+            <input type="text" id="userMsg" placeholder="Type a message" 
+                   class="flex-1 p-3 px-5 rounded-full outline-none shadow-inner border-none text-sm">
+            <button onclick="send()" class="bg-[#00a884] text-white p-3 rounded-full shadow-lg active:scale-90 transition">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M1.101 21.757L23.8 12.028 1.101 2.3l.011 7.912 13.623 1.816-13.623 1.817-.011 7.912z"></path></svg>
+            </button>
         </div>
     </div>
 
     <script>
         let myName = localStorage.getItem("chat_user_name");
+        const chatBox = document.getElementById('chat-box');
 
-        window.onload = function() {
+        window.onload = () => {
             if (!myName) document.getElementById('login-screen').classList.remove('hidden');
             else initChat();
         };
@@ -50,54 +62,75 @@
         async function saveLogin() {
             const name = document.getElementById('userNameInput').value.trim();
             if (!name) return;
-            document.getElementById('loginBtn').innerText = "Loading...";
-            
-            await fetch(SCRIPT_URL, {
-                method: "POST",
-                body: JSON.stringify({ action: "login", name: name })
-            });
-
+            document.getElementById('loginBtn').innerText = "Connecting...";
+            await fetch(SCRIPT_URL, { method: "POST", mode: 'no-cors', body: JSON.stringify({ action: "login", name: name }) });
             localStorage.setItem("chat_user_name", name);
-            myName = name;
-            document.getElementById('login-screen').classList.add('hidden');
-            initChat();
+            location.reload();
         }
 
         function initChat() {
             document.getElementById('display-name').innerText = myName;
+            document.getElementById('header-avatar').src = `https://ui-avatars.com/api/?name=${myName}&background=random`;
             loadMessages();
-            setInterval(loadMessages, 3000);
+            setInterval(loadMessages, 1500); // Speed increased (1.5 sec)
         }
 
         async function loadMessages() {
-            const res = await fetch(`${SCRIPT_URL}?user=${encodeURIComponent(myName)}`);
-            const data = await res.json();
-            const chatBox = document.getElementById('chat-box');
-            chatBox.innerHTML = '';
-            data.forEach(row => {
-                const isMe = row[0].toString().toLowerCase() === myName.toLowerCase();
-                chatBox.innerHTML += `
-                    <div class="${isMe ? 'self-end bg-[#dcf8c6]' : 'self-start bg-white'} max-w-[80%] p-2 rounded-lg shadow-sm relative mb-1">
-                        ${!isMe ? `<p class="text-[10px] font-bold text-blue-600">${row[0]}</p>` : ''}
-                        <p class="text-sm pr-12">${row[1]}</p>
-                        <span class="text-[9px] absolute bottom-1 right-2">${row[3] === 'Seen' ? '🔵🔵' : '✓✓'}</span>
-                    </div>`;
-            });
+            try {
+                const res = await fetch(`${SCRIPT_URL}?user=${encodeURIComponent(myName)}`);
+                const data = await res.json();
+                
+                // Sirf tab update karein jab naye messages hon (Flicker kam karne ke liye)
+                const currentContent = chatBox.dataset.lastCount;
+                if(currentContent == data.length) return;
+                
+                chatBox.innerHTML = '';
+                data.forEach(row => {
+                    const isMe = row[0].toString().toLowerCase() === myName.toLowerCase();
+                    const time = new Date(row[2]).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    
+                    chatBox.innerHTML += `
+                        <div class="${isMe ? 'self-end bg-[#dcf8c6]' : 'self-start bg-white'} max-w-[85%] p-2.5 rounded-2xl shadow-sm relative mb-1 animate-in fade-in duration-300">
+                            ${!isMe ? `<p class="text-[10px] font-bold text-[#075e54] mb-1">${row[0]}</p>` : ''}
+                            <p class="text-[14px] leading-tight pr-10 text-gray-800">${row[1]}</p>
+                            <div class="flex items-center gap-1 absolute bottom-1 right-2">
+                                <span class="text-[9px] text-gray-500">${time}</span>
+                                ${isMe ? `<span class="text-[14px] ${row[3] === 'Seen' ? 'text-[#34b7f1]' : 'text-gray-400'}">✓✓</span>` : ''}
+                            </div>
+                        </div>`;
+                });
+                chatBox.dataset.lastCount = data.length;
+                chatBox.scrollTop = chatBox.scrollHeight;
+            } catch (e) { console.log("Retrying..."); }
         }
 
         async function send() {
             const input = document.getElementById('userMsg');
-            const msg = input.value;
+            const msg = input.value.trim();
             if(!msg) return;
+
+            // --- OPTIMISTIC UI: Turant dikhao ---
+            const tempTime = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            chatBox.innerHTML += `
+                <div class="self-end bg-[#dcf8c6] max-w-[85%] p-2.5 rounded-2xl shadow-sm relative mb-1 opacity-70">
+                    <p class="text-[14px] leading-tight pr-10 text-gray-800">${msg}</p>
+                    <div class="flex items-center gap-1 absolute bottom-1 right-2">
+                        <span class="text-[9px] text-gray-500">${tempTime}</span>
+                        <span class="text-[14px] text-gray-400 italic">🕒</span>
+                    </div>
+                </div>`;
+            chatBox.scrollTop = chatBox.scrollHeight;
             input.value = '';
-            
-            await fetch(SCRIPT_URL, {
+
+            // Backend ko bhejte raho background mein
+            fetch(SCRIPT_URL, {
                 method: "POST",
+                mode: 'no-cors',
                 body: JSON.stringify({ action: "send", sender: myName, message: msg })
             });
-            loadMessages();
         }
 
+        document.getElementById('userMsg').addEventListener("keypress", (e) => { if (e.key === "Enter") send(); });
         function logout() { localStorage.clear(); location.reload(); }
     </script>
 </body>
