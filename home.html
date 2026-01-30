@@ -3,18 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Inderjeet Chat Pro</title>
+    <title>Inderjeet Smart Chat</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .chat-bg { background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); background-size: 400px; }
-        #chat-box { scroll-behavior: auto; }
         body { height: 100dvh; overflow: hidden; touch-action: manipulation; }
     </style>
 </head>
 <body class="flex flex-col font-sans bg-[#dadbd3]">
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxcY99BPgwi9LlTTpzFflWlMzJIscwk_SWcuUrd59iFTf_tNSJ9iMN4J4CMuUtMvA/exec";
+        // Yahan apna Google Web App URL paste karein
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxJuCDhSMlqVfzVjebZcsX-1vSzepP9C4gsLN0HrmIez0e4HVXdRn4rPUSZcHEAg08N/exec";
     </script>
 
     <div class="flex flex-col h-full">
@@ -24,14 +24,14 @@
                     <img id="header-avatar" src="https://ui-avatars.com/api/?name=User">
                 </div>
                 <div>
-                    <h1 id="display-name" class="font-bold text-sm italic leading-none">Inderjeet</h1>
+                    <h1 id="display-name" class="font-bold text-sm italic">Chat</h1>
                     <span class="text-[10px] text-green-300">online</span>
                 </div>
             </div>
             
             <div class="flex items-center gap-3">
                 <div class="flex flex-col items-center">
-                    <span class="text-[7px] uppercase font-bold">Notif</span>
+                    <span class="text-[7px] font-bold">PUSH</span>
                     <input type="checkbox" id="notifToggle" class="w-5 h-5 cursor-pointer accent-[#00a884]" checked>
                 </div>
                 <button onclick="logout()" class="text-[10px] bg-black/20 px-3 py-1.5 rounded-full font-bold uppercase tracking-tight">Logout</button>
@@ -97,7 +97,6 @@
             const msg = inputField.value.trim();
             if(!msg) return;
 
-            // Optimistic Update
             const tempTime = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
             chatBox.innerHTML += `<div class="self-end bg-[#dcf8c6] max-w-[85%] p-2 px-3 rounded-2xl shadow-sm mb-1 opacity-70">
                 <span class="text-[14px] text-gray-800 leading-tight">${msg}</span>
