@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .chat-bg { background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); }
+    </style>
+</head>
+<body class="h-screen flex flex-col font-sans bg-[#dadbd3]">
+
+    <script>
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwmRhZSOsvOxRSyAKAJrzNDjRJ5BAijnLTKStV_r4RnahebHPaAJjJ664kZZ9pWuwYB/exec";
+    </script>
+
+    <div id="login-screen" class="fixed inset-0 bg-[#075e54] z-50 flex items-center justify-center p-6 hidden">
+        <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-sm text-center">
+            <h2 class="text-2xl font-bold mb-4 text-[#075e54]">Netlify Chat Login</h2>
+            <input type="text" id="userNameInput" placeholder="Enter Your Name" class="w-full p-3 border rounded-lg mb-4 outline-none">
+            <button id="loginBtn" onclick="saveLogin()" class="w-full bg-[#00a884] text-white p-3 rounded-lg font-bold">Start</button>
+        </div>
+    </div>
+
+    <div id="chat-ui" class="flex flex-col h-full">
+        <div class="bg-[#075e54] text-white p-4 flex justify-between items-center shadow-md">
+            <div class="flex items-center">
+                <div class="w-10 h-10 bg-gray-300 rounded-full mr-3 overflow-hidden">
+                    <img id="header-avatar" src="https://ui-avatars.com/api/?name=User">
+                </div>
+                <div><h1 id="display-name" class="font-bold text-sm">Chat App</h1></div>
+            </div>
+            <button onclick="logout()" class="text-xs bg-[#054d44] px-2 py-1 rounded">Logout</button>
+        </div>
+        <div id="chat-box" class="flex-1 overflow-y-auto p-4 chat-bg flex flex-col gap-2"></div>
+        <div class="bg-[#f0f0f0] p-3 flex items-center gap-2">
+            <input type="text" id="userMsg" placeholder="Type a message" class="flex-1 p-2 px-4 rounded-full outline-none">
+            <button onclick="send()" class="bg-[#00a884] text-white p-3 rounded-full shadow-md">➤</button>
+        </div>
+    </div>
+
+    <script>
+        let myName = localStorage.getItem("chat_user_name");
+
+        window.onload = function() {
+            if (!myName) document.getElementById('login-screen').classList.remove('hidden');
+            else initChat();
+        };
+
+        async function saveLogin() {
+            const name = document.getElementById('userNameInput').value.trim();
+            if (!name) return;
+            document.getElementById('loginBtn').innerText = "Loading...";
+            
+            await fetch(SCRIPT_URL, {
+                method: "POST",
+                body: JSON.stringify({ action: "login", name: name })
+            });
+
+            localStorage.setItem("chat_user_name", name);
+            myName = name;
+            document.getElementById('login-screen').classList.add('hidden');
+            initChat();
+        }
+
+        function initChat() {
+            document.getElementById('display-name').innerText = myName;
+            loadMessages();
+            setInterval(loadMessages, 3000);
+        }
+
+        async function loadMessages() {
+            const res = await fetch(`${SCRIPT_URL}?user=${encodeURIComponent(myName)}`);
+            const data = await res.json();
+            const chatBox = document.getElementById('chat-box');
+            chatBox.innerHTML = '';
+            data.forEach(row => {
+                const isMe = row[0].toString().toLowerCase() === myName.toLowerCase();
+                chatBox.innerHTML += `
+                    <div class="${isMe ? 'self-end bg-[#dcf8c6]' : 'self-start bg-white'} max-w-[80%] p-2 rounded-lg shadow-sm relative mb-1">
+                        ${!isMe ? `<p class="text-[10px] font-bold text-blue-600">${row[0]}</p>` : ''}
+                        <p class="text-sm pr-12">${row[1]}</p>
+                        <span class="text-[9px] absolute bottom-1 right-2">${row[3] === 'Seen' ? '🔵🔵' : '✓✓'}</span>
+                    </div>`;
+            });
+        }
+
+        async function send() {
+            const input = document.getElementById('userMsg');
+            const msg = input.value;
+            if(!msg) return;
+            input.value = '';
+            
+            await fetch(SCRIPT_URL, {
+                method: "POST",
+                body: JSON.stringify({ action: "send", sender: myName, message: msg })
+            });
+            loadMessages();
+        }
+
+        function logout() { localStorage.clear(); location.reload(); }
+    </script>
+</body>
+</html>
