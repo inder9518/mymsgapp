@@ -3,42 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Inderjeet Chat Pro</title>
+    <title>Inderjeet Fast Chat</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .chat-bg { background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); background-size: 400px; }
-        #chat-box { scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
-        body { height: 100dvh; overflow: hidden; }
-        .msg-bubble { word-wrap: break-word; max-width: 85%; }
+        #chat-box { scroll-behavior: auto; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        body { height: 100dvh; overflow: hidden; touch-action: manipulation; }
     </style>
 </head>
 <body class="flex flex-col font-sans bg-[#dadbd3]">
 
     <script>
-        // Apne Apps Script ka URL yahan confirm karein
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwWkNAqlgQdxJB1ADQ9ySPaEYmZmA3f79Be0YgYGYwmYjAOP1oOGzAXaAPcNXOabt_-/exec";
     </script>
 
-    <div id="chat-ui" class="flex flex-col h-full">
+    <div class="flex flex-col h-full">
         <div class="bg-[#075e54] text-white p-3 flex justify-between items-center shadow-md shrink-0">
             <div class="flex items-center">
                 <div class="w-10 h-10 bg-gray-200 rounded-full mr-3 border-2 border-white/20 overflow-hidden">
                     <img id="header-avatar" src="https://ui-avatars.com/api/?name=User">
                 </div>
                 <div>
-                    <h1 id="display-name" class="font-bold text-sm leading-none italic">Inderjeet</h1>
-                    <span class="text-[10px] text-green-300">online</span>
+                    <h1 id="display-name" class="font-bold text-sm italic">Inderjeet</h1>
+                    <span class="text-[10px] text-green-300 leading-none">online</span>
                 </div>
             </div>
             <button onclick="logout()" class="text-[10px] bg-black/20 px-3 py-1.5 rounded-full font-bold uppercase">Logout</button>
         </div>
 
-        <div id="chat-box" class="flex-1 overflow-y-auto p-4 chat-bg flex flex-col gap-2"></div>
+        <div id="chat-box" class="flex-1 overflow-y-auto p-4 chat-bg flex flex-col gap-2 hide-scrollbar"></div>
 
-        <div class="bg-[#f0f0f0] p-2 flex items-center gap-2 pb-6 sm:pb-2 shadow-inner">
+        <div class="bg-[#f0f0f0] p-2 flex items-center gap-2 pb-6 sm:pb-2">
             <input type="text" id="userMsg" autocomplete="off" placeholder="Type a message" 
-                   class="flex-1 p-3 px-5 rounded-full outline-none shadow-sm border border-gray-200 text-sm">
-            <button onclick="send()" ontouchstart="send()" class="bg-[#00a884] text-white p-3 rounded-full shadow-lg active:scale-90 transition">
+                   class="flex-1 p-3 px-5 rounded-full outline-none border border-gray-200 text-sm">
+            <button onclick="send()" ontouchstart="send()" class="bg-[#00a884] text-white p-3 rounded-full active:scale-90 transition">
                 <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M1.101 21.757L23.8 12.028 1.101 2.3l.011 7.912 13.623 1.816-13.623 1.817-.011 7.912z"></path></svg>
             </button>
         </div>
@@ -52,11 +51,10 @@
 
         window.onload = () => {
             if (!myName) {
-                let n = prompt("Enter Your Name:");
+                let n = prompt("Enter Name:");
                 if(n) { localStorage.setItem("chat_user_name", n); location.reload(); }
             } else {
                 initChat();
-                if ("Notification" in window) Notification.requestPermission();
             }
         };
 
@@ -64,7 +62,8 @@
             document.getElementById('display-name').innerText = myName;
             document.getElementById('header-avatar').src = `https://ui-avatars.com/api/?name=${myName}&background=random`;
             loadMessages();
-            setInterval(loadMessages, 1200); // 1.2 sec refresh speed
+            // Faster Refresh: 1 second
+            setInterval(loadMessages, 1000); 
         }
 
         async function loadMessages() {
@@ -72,52 +71,27 @@
                 const res = await fetch(`${SCRIPT_URL}?user=${encodeURIComponent(myName)}`);
                 const data = await res.json();
                 
-                // Beep sound code yahan se poori tarah hata diya gaya hai
                 if(data.length === lastMsgCount) return;
-
-                // Notification only if screen is background/off
-                if (lastMsgCount > 0 && data.length > lastMsgCount) {
-                    const lastMsg = data[data.length - 1];
-                    if (lastMsg[0].toLowerCase() !== myName.toLowerCase() && document.visibilityState !== 'visible') {
-                        if (Notification.permission === "granted") {
-                            new Notification(lastMsg[0], { body: lastMsg[1] });
-                        }
-                    }
-                }
 
                 chatBox.innerHTML = '';
                 data.forEach(row => {
                     const isMe = row[0].toString().toLowerCase() === myName.toLowerCase();
                     const time = new Date(row[2]).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                    const status = row[3];
                     
                     chatBox.innerHTML += `
-                        <div class="${isMe ? 'self-end bg-[#dcf8c6]' : 'self-start bg-white'} msg-bubble p-2 px-3 rounded-2xl shadow-sm mb-1">
+                        <div class="${isMe ? 'self-end bg-[#dcf8c6]' : 'self-start bg-white'} max-w-[85%] p-2 px-3 rounded-2xl shadow-sm mb-1">
                             ${!isMe ? `<span class="text-[10px] font-bold text-blue-600 block mb-0.5">${row[0]}</span>` : ''}
                             <span class="text-[14px] text-gray-800 leading-tight">${row[1]}</span>
-                            <div class="flex justify-end items-center gap-1 mt-0.5">
+                            <div class="flex justify-end mt-0.5">
                                 <span class="text-[8px] text-gray-400">${time}</span>
-                                ${isMe ? `<span class="text-[14px] leading-none ${status === 'Seen' ? 'text-[#34b7f1]' : 'text-gray-400'}">✓✓</span>` : ''}
+                                ${isMe ? `<span class="text-[14px] text-gray-400 ml-1 leading-none">✓✓</span>` : ''}
                             </div>
                         </div>`;
                 });
 
-                // Blue Tick trigger: Sirf tab jab receiver active ho
-                if (document.visibilityState === 'visible') {
-                    markAsSeen();
-                }
-
                 chatBox.scrollTop = chatBox.scrollHeight;
                 lastMsgCount = data.length;
-            } catch (e) { console.error("Syncing..."); }
-        }
-
-        async function markAsSeen() {
-            fetch(SCRIPT_URL, {
-                method: "POST",
-                mode: 'no-cors',
-                body: JSON.stringify({ action: "markSeen", user: myName })
-            });
+            } catch (e) {}
         }
 
         async function send(event) {
@@ -125,16 +99,12 @@
             const msg = inputField.value.trim();
             if(!msg) return;
 
-            // Instant UI Update (Optimistic)
+            // Instant Add to Screen
             const tempTime = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            chatBox.innerHTML += `
-                <div class="self-end bg-[#dcf8c6] msg-bubble p-2 px-3 rounded-2xl shadow-sm mb-1 opacity-70">
-                    <span class="text-[14px] text-gray-800 leading-tight">${msg}</span>
-                    <div class="flex justify-end items-center gap-1 mt-0.5">
-                        <span class="text-[8px] text-gray-400">${tempTime}</span>
-                        <span class="text-[14px] text-gray-400 italic">🕒</span>
-                    </div>
-                </div>`;
+            chatBox.innerHTML += `<div class="self-end bg-[#dcf8c6] max-w-[85%] p-2 px-3 rounded-2xl shadow-sm mb-1 opacity-70">
+                <span class="text-[14px] text-gray-800 leading-tight">${msg}</span>
+                <div class="flex justify-end mt-0.5"><span class="text-[8px] text-gray-400">${tempTime}</span></div>
+            </div>`;
             
             chatBox.scrollTop = chatBox.scrollHeight;
             inputField.value = '';
