@@ -3,21 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Fast Chat Pro</title>
+    <title>Inderjeet Chat Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .chat-bg { background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); background-size: 400px; }
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-        #chat-box { scroll-behavior: smooth; }
-        body { height: 100dvh; overflow: hidden; touch-action: manipulation; }
+        #chat-box { scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
+        body { height: 100dvh; overflow: hidden; }
+        .msg-bubble { word-wrap: break-word; max-width: 85%; }
     </style>
 </head>
 <body class="flex flex-col font-sans bg-[#dadbd3]">
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzwGDOBLgphPn8QRVEuEGmOj0wc6Qwi7DvI9GA3E2uvUDICKOgWiC0bPNact-UBEaBK/exec";
-        // Notification Sound URL
-        const NOTIF_SOUND = new Audio("https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3");
+        // Apne Apps Script ka URL yahan confirm karein
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwWkNAqlgQdxJB1ADQ9ySPaEYmZmA3f79Be0YgYGYwmYjAOP1oOGzAXaAPcNXOabt_-/exec";
     </script>
 
     <div id="chat-ui" class="flex flex-col h-full">
@@ -27,70 +26,45 @@
                     <img id="header-avatar" src="https://ui-avatars.com/api/?name=User">
                 </div>
                 <div>
-                    <h1 id="display-name" class="font-bold text-sm leading-none">Inderjeet</h1>
-                    <span class="text-[10px] text-green-300 italic">online</span>
+                    <h1 id="display-name" class="font-bold text-sm leading-none italic">Inderjeet</h1>
+                    <span class="text-[10px] text-green-300">online</span>
                 </div>
             </div>
-            <div class="flex items-center gap-2">
-                <button onclick="toggleSilent()" id="silent-btn" class="p-2 bg-black/10 rounded-full text-lg active:scale-90 transition">
-                    <span id="silent-icon">🔊</span>
-                </button>
-                <button onclick="logout()" class="text-[10px] bg-black/20 px-3 py-1.5 rounded-full font-bold uppercase">Logout</button>
-            </div>
+            <button onclick="logout()" class="text-[10px] bg-black/20 px-3 py-1.5 rounded-full font-bold uppercase">Logout</button>
         </div>
 
-        <div id="chat-box" class="flex-1 overflow-y-auto p-4 chat-bg flex flex-col gap-2 hide-scrollbar"></div>
+        <div id="chat-box" class="flex-1 overflow-y-auto p-4 chat-bg flex flex-col gap-2"></div>
 
-        <div class="bg-[#f0f0f0] p-2 flex items-center gap-2 pb-6 sm:pb-2">
+        <div class="bg-[#f0f0f0] p-2 flex items-center gap-2 pb-6 sm:pb-2 shadow-inner">
             <input type="text" id="userMsg" autocomplete="off" placeholder="Type a message" 
-                   class="flex-1 p-3 px-5 rounded-full outline-none shadow-sm border border-gray-200 text-sm focus:ring-1 focus:ring-[#00a884]">
+                   class="flex-1 p-3 px-5 rounded-full outline-none shadow-sm border border-gray-200 text-sm">
             <button onclick="send()" ontouchstart="send()" class="bg-[#00a884] text-white p-3 rounded-full shadow-lg active:scale-90 transition">
                 <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M1.101 21.757L23.8 12.028 1.101 2.3l.011 7.912 13.623 1.816-13.623 1.817-.011 7.912z"></path></svg>
             </button>
         </div>
     </div>
 
-    <div id="login-screen" class="fixed inset-0 bg-[#075e54] z-50 flex items-center justify-center p-6 hidden">
-        <div class="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-sm text-center">
-            <h2 class="text-xl font-bold mb-4 text-[#075e54]">Chat Login</h2>
-            <input type="text" id="userNameInput" class="w-full p-3 border rounded-xl mb-4 outline-none border-gray-300">
-            <button onclick="saveLogin()" class="w-full bg-[#00a884] text-white p-3 rounded-xl font-bold active:scale-95 transition">Start</button>
-        </div>
-    </div>
-
     <script>
         let myName = localStorage.getItem("chat_user_name");
-        let isSilent = localStorage.getItem("chat_silent") === "true";
         const chatBox = document.getElementById('chat-box');
         const inputField = document.getElementById('userMsg');
         let lastMsgCount = 0;
 
         window.onload = () => {
-            if (!myName) document.getElementById('login-screen').classList.remove('hidden');
-            else {
+            if (!myName) {
+                let n = prompt("Enter Your Name:");
+                if(n) { localStorage.setItem("chat_user_name", n); location.reload(); }
+            } else {
                 initChat();
                 if ("Notification" in window) Notification.requestPermission();
             }
-            updateSilentUI();
         };
-
-        function toggleSilent() {
-            isSilent = !isSilent;
-            localStorage.setItem("chat_silent", isSilent);
-            updateSilentUI();
-        }
-
-        function updateSilentUI() {
-            document.getElementById('silent-icon').innerText = isSilent ? "🔇" : "🔊";
-            document.getElementById('silent-btn').classList.toggle('opacity-50', isSilent);
-        }
 
         function initChat() {
             document.getElementById('display-name').innerText = myName;
             document.getElementById('header-avatar').src = `https://ui-avatars.com/api/?name=${myName}&background=random`;
             loadMessages();
-            // Polling speed increased (1.2 seconds)
-            setInterval(loadMessages, 1200);
+            setInterval(loadMessages, 1200); // 1.2 sec refresh speed
         }
 
         async function loadMessages() {
@@ -98,18 +72,15 @@
                 const res = await fetch(`${SCRIPT_URL}?user=${encodeURIComponent(myName)}`);
                 const data = await res.json();
                 
+                // Beep sound code yahan se poori tarah hata diya gaya hai
                 if(data.length === lastMsgCount) return;
 
-                // Notification & Sound Logic
+                // Notification only if screen is background/off
                 if (lastMsgCount > 0 && data.length > lastMsgCount) {
                     const lastMsg = data[data.length - 1];
-                    const sender = lastMsg[0].toString().toLowerCase();
-                    if (sender !== myName.toLowerCase()) {
-                        if (!isSilent) {
-                            NOTIF_SOUND.play().catch(e => console.log("Click page to enable sound"));
-                            if (Notification.permission === "granted") {
-                                new Notification(`New message from ${lastMsg[0]}`, { body: lastMsg[1] });
-                            }
+                    if (lastMsg[0].toLowerCase() !== myName.toLowerCase() && document.visibilityState !== 'visible') {
+                        if (Notification.permission === "granted") {
+                            new Notification(lastMsg[0], { body: lastMsg[1] });
                         }
                     }
                 }
@@ -121,33 +92,47 @@
                     const status = row[3];
                     
                     chatBox.innerHTML += `
-                        <div class="${isMe ? 'self-end bg-[#dcf8c6]' : 'self-start bg-white'} max-w-[85%] p-2 px-3 rounded-2xl shadow-sm mb-1">
-                            ${!isMe ? `<span class="text-[10px] font-bold text-blue-600 mb-0.5 block">${row[0]}</span>` : ''}
+                        <div class="${isMe ? 'self-end bg-[#dcf8c6]' : 'self-start bg-white'} msg-bubble p-2 px-3 rounded-2xl shadow-sm mb-1">
+                            ${!isMe ? `<span class="text-[10px] font-bold text-blue-600 block mb-0.5">${row[0]}</span>` : ''}
                             <span class="text-[14px] text-gray-800 leading-tight">${row[1]}</span>
                             <div class="flex justify-end items-center gap-1 mt-0.5">
-                                <span class="text-[8px] text-gray-400 font-medium">${time}</span>
+                                <span class="text-[8px] text-gray-400">${time}</span>
                                 ${isMe ? `<span class="text-[14px] leading-none ${status === 'Seen' ? 'text-[#34b7f1]' : 'text-gray-400'}">✓✓</span>` : ''}
                             </div>
                         </div>`;
                 });
+
+                // Blue Tick trigger: Sirf tab jab receiver active ho
+                if (document.visibilityState === 'visible') {
+                    markAsSeen();
+                }
 
                 chatBox.scrollTop = chatBox.scrollHeight;
                 lastMsgCount = data.length;
             } catch (e) { console.error("Syncing..."); }
         }
 
-        async function send() {
+        async function markAsSeen() {
+            fetch(SCRIPT_URL, {
+                method: "POST",
+                mode: 'no-cors',
+                body: JSON.stringify({ action: "markSeen", user: myName })
+            });
+        }
+
+        async function send(event) {
+            if (event) event.preventDefault();
             const msg = inputField.value.trim();
             if(!msg) return;
 
-            // Optimistic UI Update
+            // Instant UI Update (Optimistic)
             const tempTime = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
             chatBox.innerHTML += `
-                <div class="self-end bg-[#dcf8c6] max-w-[85%] p-2 px-3 rounded-2xl shadow-sm mb-1 opacity-70">
+                <div class="self-end bg-[#dcf8c6] msg-bubble p-2 px-3 rounded-2xl shadow-sm mb-1 opacity-70">
                     <span class="text-[14px] text-gray-800 leading-tight">${msg}</span>
                     <div class="flex justify-end items-center gap-1 mt-0.5">
-                        <span class="text-[8px] text-gray-400 font-medium">${tempTime}</span>
-                        <span class="text-[14px] text-gray-400 italic leading-none">🕒</span>
+                        <span class="text-[8px] text-gray-400">${tempTime}</span>
+                        <span class="text-[14px] text-gray-400 italic">🕒</span>
                     </div>
                 </div>`;
             
@@ -162,12 +147,8 @@
             });
         }
 
-        function saveLogin() {
-            const n = document.getElementById('userNameInput').value.trim();
-            if(n) { localStorage.setItem("chat_user_name", n); location.reload(); }
-        }
-        function logout() { localStorage.removeItem("chat_user_name"); location.reload(); }
         inputField.onkeypress = (e) => { if(e.key === "Enter") send(); };
+        function logout() { localStorage.removeItem("chat_user_name"); location.reload(); }
     </script>
 </body>
 </html>
